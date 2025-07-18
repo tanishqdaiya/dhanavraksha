@@ -1,0 +1,26 @@
+# Object files
+*.o
+
+# Executable
+dhanavraksha
+
+# Emacs backup and auto-save files
+*~
+\#*\#
+.\#*
+
+# Core dumps
+core
+
+# MacOS
+.DS_Store
+
+# Compilation artifacts
+*.out
+*.log
+
+# Misc
+*.swp
+
+# expf - Expense Files
+*.expf
