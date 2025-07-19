@@ -56,3 +56,4 @@ features:
 3) Ability to perform simple statistics
 (for advanced statistics: export to csv -> excel -> do your magic there)
 4) Support for grouping and searching.
+5) Add a pager support.

@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "config.h"
 #include "transaction.h"
 #include "tdlib.h"
 
@@ -157,19 +158,42 @@ print_transaction (const struct Transaction t)
 void
 print_acstatement (const struct AccountStatement as)
 {
-  printf ("%-6s  %-10s  %-16s  %10s  %s\n",
-          "ID", "Date", "Category", "Amount", "Description");
-  printf
-    ("---------------------------------------------------------------\n");
+  size_t i;
+  int deposits = 0, withdrawals = 0;
+  double s_deposits = 0.0f, s_withdrawals = 0.0f;
+  
+  
+  printf("%-7s | %-10s | %-15s | %10s | %s\n",
+	 "ID", "Date", "Category", "Amount", "Description");
+  printf("--------+------------+-----------------+------------+---------------------------\n");
 
-  for (size_t i = 0; i < as.length; ++i)
+  for (i = 0; i < as.length; ++i)
     {
-      struct Transaction *t = as.transactions[i];
-      printf ("%-6s  %-10s  %-16s  %10.2f  %s\n",
-              t->id, t->date, t->category, t->amount, t->description);
+      struct Transaction *t;
+      t = as.transactions[i];
+
+      if (t->amount > 0)
+	{
+	  s_deposits += t->amount;
+	  deposits++;
+	}
+      else
+	{
+	  s_withdrawals += t->amount;
+	  withdrawals++;
+	}
+      
+      printf("%-7s | %-10s | %-15.15s | %10.2f | %s\n",
+	     t->id, t->date, t->category, t->amount, t->description);
     }
 
-  printf
-    ("---------------------------------------------------------------\n");
-  printf ("Total transactions: %zu\n", as.length);
+  printf("--------+------------+-----------------+------------+---------------------------\n\n");
+  printf("Account Summary:\n");
+  printf("  Total transactions  : %zu\n", as.length);
+  printf("  Deposits (CR)       : %d (Total: %s%.2f)\n",
+	 deposits, CURRENCY_SYMBOL, s_deposits);
+  printf("  Withdrawals (DR)    : %d (Total: %s%.2f)\n",
+	 withdrawals, CURRENCY_SYMBOL, -s_withdrawals);
+  printf("  Net balance change  : %s%.2f\n",
+	 CURRENCY_SYMBOL, s_deposits + s_withdrawals);
 }
