@@ -17,7 +17,7 @@
 */
 
 #include <errno.h>
-#include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -28,15 +28,25 @@
 #include "io.h"
 #include "tdlib.h"
 #include "transaction.h"
+#include "tui.h"
 
-/* Prints program usage. Use for bad arguments */
-static void
-usage (const char *progname)
+struct cmd_args
 {
-  fprintf (stderr,
+  uint8_t help;
+  uint8_t version;
+  const char *command;
+};
+struct cmd_args args;
+
+struct v_transaction vector_transaction;
+
+static void
+usage (const char *progname, FILE *stream, int code)
+{
+  fprintf (stream,
 	   "Usage: %s [OPTION] COMMAND\n"
 	   "\n"
-	   "Personal transaction tracker.\n"
+	   "Personal finance logger.\n"
 	   "\n"
 	   "Options:\n"
 	   "  -h, --help        Show this help message and exit\n"
@@ -48,156 +58,119 @@ usage (const char *progname)
 	   "\n"
 	   "Example:\n"
 	   "  %s entry\n" "  %s view\n", progname, progname, progname);
-  exit (EXIT_FAILURE);
+  exit (code);
 }
 
-/* Generates an hex_id of given length using rand. Writes to buf. */
-static void
-idgen (char *buf, size_t len)
-{
-  const char *hex = "0123456789abcdef";
-  for (size_t i = 0; i < len - 1; ++i)
-    buf[i] = hex[rand () % 16];
-  buf[len - 1] = '\0';
-}
-
+/* Gets the current date in YYYY-MM-DD */
 static void
 get_today (char *buf, size_t bufsz)
 {
   time_t t;
   struct tm *tm_info;
 
-  trap (bufsz < 11, "get_today needs more buffer space");
+  TRAP (bufsz < 11, "get_today needs more buffer space");
 
   t = time (NULL);
   tm_info = localtime (&t);
 
-  trap (tm_info == NULL, "failed to get time");
+  TRAP (tm_info == NULL, "failed to get time");
 
   strftime (buf, bufsz, "%Y-%m-%d", tm_info);
-}
-
-static void
-ensure_file_exists (const char *filename) {
-    FILE *f = fopen (filename, "a");
-
-    if (!f)
-      {
-	fprintf (stderr, "fopen(%s): %s\n", RECORD_FILE, strerror (errno));
-	exit (EXIT_FAILURE);
-      }
-
-    fclose (f);
-}
-
-static bool
-file_exists (const char *filename)
-{
-    FILE *file = fopen (filename, "r");
-
-    if (file)
-      {
-	fclose(file);
-	return true;
-      }
-
-    return false;
 }
 
 int
 main (int argc, char **argv)
 {
-  struct AccountStatement as;
-
   srand (time (NULL));
-
+  
   if (argc < 2)
-    usage (argv[0]);
+    usage (argv[0], stderr, EXIT_FAILURE);
 
-  if (strcmp (argv[1], "-h") == 0 || strcmp (argv[1], "--help") == 0)
-    usage (argv[0]);
+  {
+    int i;
+    const char *arg;
 
-  if (strcmp (argv[1], "-v") == 0 || strcmp (argv[1], "--version") == 0)
+    for (i = 1; i < argc; ++i)
+      {
+	arg = argv[i];
+
+	if (STRCMP_LIT (arg, "-h") == 0 || STRCMP_LIT (arg, "--help") == 0)
+	  args.help = 1;
+	else if (STRCMP_LIT (arg, "-v") == 0
+		 || STRCMP_LIT (arg, "--version") == 0)
+	  args.version = 1;
+	else if (arg[0] != '-' && args.command == NULL)
+	  args.command = arg;
+	else
+	  {
+	    fprintf (stderr, "Unknown argument: %s\n", arg);
+	    usage (argv[0], stderr, EXIT_FAILURE);
+	  }
+      }
+  }
+
+  if (args.help)
+    usage (argv[0], stdout, EXIT_SUCCESS);
+
+  if (args.version)
     {
-      fprintf (stdout, DHANAVRAKSHA_VERSION);
+      fprintf (stdout, "Dhanavraksha %s \n", DHANAVRAKSHA_VERSION);
       exit (EXIT_SUCCESS);
     }
 
-  {
-    FILE *fp;
-    char line[MAX_LINE_SIZE];
-
-    if (!file_exists (RECORD_FILE))
-      ensure_file_exists (RECORD_FILE);
-
-    fp = fopen (RECORD_FILE, "r");
-    if (fp == NULL)
-      {
-	fprintf (stderr, "fopen(%s): %s\n", RECORD_FILE, strerror (errno));
-	exit (EXIT_FAILURE);
-      }
-
-    as.length = 0;
-    as.capacity = 0;
-    while (fgets (line, MAX_LINE_SIZE, fp) != NULL)
-      {
-	struct Transaction *t;
-	size_t sz;
-	char **tokens = tokenize_transaction (line);
-
-	sz = sizeof (struct Transaction);
-	t = (struct Transaction *) malloc (sz);
-	if (t == NULL)
-	  {
-	    fprintf (stderr, "main: memory allocation failed (size: %zu)\n",
-		     sz);
-	    exit (EXIT_FAILURE);
-	  }
-
-	strcpy (t->id, tokens[0]);
-	strcpy (t->date, tokens[1]);
-	strcpy (t->category, tokens[2]);
-	t->amount = strtod (tokens[3], NULL);
-	strcpy (t->description, tokens[4]);
-
-	append_transaction (&as, t);
-      }
-
-    fclose (fp);
-  }
-
-  if (strcmp (argv[1], "view") == 0)
-    print_acstatement (as);
-
-  /* Entry is relatively unsafe since it doesn't check for user balance. In
-     later versions, other functions will be introduced for ease-of-use. */
-  if (strcmp (argv[1], "entry") == 0)
+  if (STRCMP_LIT (args.command, "view") == 0)
     {
-      struct Transaction t;
+      clock_t begin;
+      double time_spent;
+
+      begin = clock ();
+      load_transactions (&vector_transaction, WFILE);
+      print_transactions (vector_transaction);
+      time_spent = (double)(clock() - begin) / CLOCKS_PER_SEC;
+      
+      printf ("Indexed %zu Transaction(s) in %fs!\n",
+	      vector_transaction.length, time_spent);
+    }
+  else if (STRCMP_LIT (args.command, "entry") == 0)
+    {
+      struct transaction t;
+      struct buffer *amount, *category, *description;
+
+      amount = prompt ("Enter amount");
+      category = prompt ("Enter category");
+      description = prompt ("Enter description");
 
       idgen (t.id, 7);
-      get_today (t.date, 11);
-      t.amount = strtod (prompt ("Amount"), NULL);
-      strcpy (t.category, prompt ("Category"));
-      strcpy (t.description, prompt ("Description"));
+      get_today (t.date, sizeof (t.date));
+      t.amount = strtod (amount->data, NULL);
+      strncpy (t.category, category->data, category->length);
+      strncpy (t.description, description->data, description->length);
 
       print_transaction (t);
 
-      char *confirm = prompt ("save record? (y/n)");    /* @Improve confirmation */
-      if (strcmp (confirm, "y") == 0)
+      if (confirm_yn ("Save record (Y/n)?", 'y') == 0)
 	{
 	  FILE *fp;
-	  fp = fopen (RECORD_FILE, "a");
+	  const char *filename;
+
+	  filename = WFILE;
+	  fp = fopen (WFILE, "a");
 	  if (fp == NULL)
 	    {
-	      fprintf (stderr, "fopen(%s): %s\n", RECORD_FILE,
-		       strerror (errno));
+	      fprintf (stderr, "fopen(%s): %s\n", filename, strerror (errno));
 	      exit (EXIT_FAILURE);
 	    }
 
 	  fprintf (fp, "%s\t%s\t%s\t%lf\t%s\n",
 		   t.id, t.date, t.category, t.amount, t.description);
 	  fclose (fp);
+	  
+	  printf ("Record saved successfully!\n");
 	}
+    }
+  else
+    {
+      fprintf (stderr, "Unknown argument: %s\n", args.command);
+      usage (argv[0], stderr, EXIT_FAILURE);
     }
 }

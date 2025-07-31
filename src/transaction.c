@@ -16,135 +16,106 @@
   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
-#include "config.h"
-#include "transaction.h"
+#include "io.h"
+#include "parser.h"
 #include "tdlib.h"
+#include "transaction.h"
 
-/* Slices a string from start (incl.) to end (excl.) without modification. */
-static char *
-strslice (const char *str, int start, int end)
+#define DA_INITIALIZER_VALUE 10
+
+void
+load_transactions (struct v_transaction *to, const char *from_file)
 {
-  size_t i, sz;
-  char *sb;
+  FILE *fp;
+  char line[MAX_LINE_SIZE];
 
-  trap (start < 0 && end < 0, "negative indexing not supported");
+  if (!file_exists (from_file))
+    ensure_file_exists (from_file);
 
-  sz = sizeof (char) * (end - start);
-  sb = (char *) malloc (sz);
-  if (sb == NULL)
+  fp = fopen (from_file, "r");
+  if (fp == NULL)
     {
-      fprintf (stderr, "strslice: memory allocation failed (size: %zu)\n",
-               sz);
+      fprintf (stderr, "fopen(%s): %s\n", from_file, strerror (errno));
       exit (EXIT_FAILURE);
     }
 
-  for (i = 0; start < end; ++start, ++i)
+  to->length = 0;
+  to->capacity = 0;
+  while (fgets (line, MAX_LINE_SIZE, fp) != NULL)
     {
-      sb[i] = str[start];
+      struct transaction *t;
+      size_t sz;
+      char **tokens = tokenize_transaction (line);
+
+      sz = sizeof (struct transaction);
+      t = (struct transaction *) malloc (sz);
+      if (t == NULL)
+	PANIC ("main: memory allocation failed (size: %zu)\n", sz);
+
+      strcpy (t->id, tokens[0]);
+      strcpy (t->date, tokens[1]);
+      strcpy (t->category, tokens[2]);
+      t->amount = strtod (tokens[3], NULL);
+      strcpy (t->description, tokens[4]);
+
+      append_transaction (to, t);
     }
 
-  return sb;
-}
-
-char **
-tokenize_transaction (char line[])
-{
-  size_t i = 0, start = 0, end = 0;
-  char *buf;
-
-  size_t token_array_sz;
-  char **tokens;
-
-  token_array_sz = sizeof (char *) * 5;
-  tokens = (char **) malloc (token_array_sz);
-  if (tokens == NULL)
-    {
-      fprintf (stderr,
-               "tokenize_transaction: memory allocation failed (size: %zu)\n",
-               token_array_sz);
-      exit (EXIT_FAILURE);
-    }
-
-  buf = line;
-  while (*buf != '\0')
-    {
-      if (*buf == '\t')
-        {
-          char *slice = strslice (line, start, end);
-          tokens[i++] = slice;
-
-          start = end + 1;
-        }
-
-      end++;
-      buf++;
-    }
-
-  if (start < end)
-    {
-      char *slice = strslice (line, start, end);
-      tokens[i++] = slice;
-    }
-
-  return tokens;
+  fclose (fp);
 }
 
 void
-append_transaction (struct AccountStatement *as, struct Transaction *t)
+append_transaction (struct v_transaction *vec_txn, struct transaction *txn)
 {
-  if (as->capacity == 0)
+  if (vec_txn->capacity == 0)
     {
-      /* Create new, append, return */
-      size_t sz;
+      /* Create new array; append and return. */
+      size_t size;
 
-      as->capacity = 10;
-      sz = sizeof (struct Transaction *) * as->capacity;
-      as->transactions = (struct Transaction **) malloc (sz);
-      if (!as->transactions)
-        {
-          fprintf (stderr,
-                   "append_transaction: memory allocation failed (size: %zu)\n",
-                   sz);
-          exit (EXIT_FAILURE);
-        }
+      size = sizeof (struct transaction *) * DA_INITIALIZER_VALUE;
 
-      as->transactions[as->length++] = t;
+      vec_txn->capacity = DA_INITIALIZER_VALUE;
+      vec_txn->transactions = (struct transaction **) malloc (size);
+      if (vec_txn->transactions == NULL)
+	PANIC ("append_transaction: memory allocation failed (size: %zu)\n",
+	       size);
+
+      vec_txn->transactions[vec_txn->length++] = txn;
       return;
     }
   else
     {
-      if (as->length >= as->capacity)
-        {
-          /* Reallocate, append and return */
-          size_t sz;
+      if (vec_txn->length >= vec_txn->capacity)
+	{
+	  /* Reallocate; append and return. */
+	  size_t size;
 
-          as->capacity *= 2;
-          sz = sizeof (struct Transaction *) * as->capacity;
-          struct Transaction **new_array = realloc (as->transactions, sz);
-          if (new_array == NULL)
-            {
-              fprintf (stderr,
-                       "append_transaction: memory reallocation failed (size: %zu)\n",
-                       sz);
-              exit (EXIT_FAILURE);
-            }
+	  vec_txn->capacity *= 2;
+	  size = sizeof (struct transaction *) * vec_txn->capacity;
 
-          as->transactions = new_array;
-          as->transactions[as->length++] = t;
-          return;
-        }
+	  struct transaction **new_array = realloc (vec_txn->transactions, size);
+	  if (new_array == NULL)
+	    PANIC ("append_transaction: memory reallocation failed"
+		   "(size: %zu)\n", size);
 
-      /* Append and return */
-      as->transactions[as->length++] = t;
+	  vec_txn->transactions = new_array;
+	  vec_txn->transactions[vec_txn->length++] = txn;
+	  return;
+	}
+
+      /* Append and return. */
+      vec_txn->transactions[vec_txn->length++] = txn;
       return;
     }
 }
 
 void
-print_transaction (const struct Transaction t)
+print_transaction (const struct transaction t)
 {
   printf ("Transaction {\n");
   printf ("\tid: %s\n", t.id);
@@ -153,47 +124,4 @@ print_transaction (const struct Transaction t)
   printf ("\tcategory: %s\n", t.category);
   printf ("\tdescription: %s\n", t.description);
   printf ("}\n");
-}
-
-void
-print_acstatement (const struct AccountStatement as)
-{
-  size_t i;
-  int deposits = 0, withdrawals = 0;
-  double s_deposits = 0.0f, s_withdrawals = 0.0f;
-  
-  
-  printf("%-7s | %-10s | %-15s | %10s | %s\n",
-	 "ID", "Date", "Category", "Amount", "Description");
-  printf("--------+------------+-----------------+------------+---------------------------\n");
-
-  for (i = 0; i < as.length; ++i)
-    {
-      struct Transaction *t;
-      t = as.transactions[i];
-
-      if (t->amount > 0)
-	{
-	  s_deposits += t->amount;
-	  deposits++;
-	}
-      else
-	{
-	  s_withdrawals += t->amount;
-	  withdrawals++;
-	}
-      
-      printf("%-7s | %-10s | %-15.15s | %10.2f | %s\n",
-	     t->id, t->date, t->category, t->amount, t->description);
-    }
-
-  printf("--------+------------+-----------------+------------+---------------------------\n\n");
-  printf("Account Summary:\n");
-  printf("  Total transactions  : %zu\n", as.length);
-  printf("  Deposits (CR)       : %d (Total: %s%.2f)\n",
-	 deposits, CURRENCY_SYMBOL, s_deposits);
-  printf("  Withdrawals (DR)    : %d (Total: %s%.2f)\n",
-	 withdrawals, CURRENCY_SYMBOL, -s_withdrawals);
-  printf("  Net balance change  : %s%.2f\n",
-	 CURRENCY_SYMBOL, s_deposits + s_withdrawals);
 }

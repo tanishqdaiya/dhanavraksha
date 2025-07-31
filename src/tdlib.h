@@ -21,19 +21,48 @@
   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#ifndef TDLIB_H
-#define TDLIB_H
+#ifndef _TDLIB_H
+#define _TDLIB_H
 
-/* Aborts the program with msg if cond is met. */
-#define trap(cond, msg)							\
-  do									\
-    {									\
-      if (cond) {							\
-	fprintf(stderr, "check failed: (%s)\n\t%s:%d: %s\n",		\
-		#cond, __FILE__, __LINE__, msg);			\
-	abort();							\
-      }									\
-    }									\
+#include <stdio.h>
+#include <stdlib.h>
+
+/* Aborts the program with msg if cond is true. */
+#define TRAP(cond, msg)						\
+  do								\
+    {								\
+      if (cond) {						\
+	fprintf(stderr, "check failed: (%s)\n\t%s:%d: %s\n",	\
+		#cond, __FILE__, __LINE__, msg);		\
+	abort();						\
+      }								\
+    }								\
   while (0)
 
-#endif /* TDLIB_H */
+/* Prints the fmt string and exits the program with EXIT_FAILURE. */
+#define PANIC(...)				\
+  do						\
+    {						\
+      fprintf (stderr, __VA_ARGS__);		\
+      fputc ('\n', stderr);			\
+      exit (EXIT_FAILURE);			\
+    }						\
+  while (0)
+
+#define STRCMP_LIT(s, literal)				\
+  strncmp (s, "" literal "", sizeof (literal) - 1)
+
+/* Slices a string from start (incl.) to end (excl.) without modification. */
+char *strslice (const char *str, int start, int end);
+
+/* Modifies the string provided string buffer into lowercase. */
+void
+str_to_low (char *str);
+
+/* Writes a pseudo-randomly generated id into buffer buf of appropriate
+   length. The len parameter defines the required length of the generated id. It
+   is advisable to have a buffer of appropriate size since the program doesn't
+   yet check for appropriate sizes. */
+void idgen (char *buf, size_t len);
+
+#endif /* _TDLIB_H */

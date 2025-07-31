@@ -1,26 +1,18 @@
-# Object files
+# Build artifacts
 *.o
+*.out
+*.a
+*.so
+*.exe
 
-# Executable
+# Binaries
 dhanavraksha
 
-# Emacs backup and auto-save files
+# Editor files
 *~
-\#*\#
-.\#*
-
-# Core dumps
-core
-
-# MacOS
+*.swp
+*.swo
 .DS_Store
 
-# Compilation artifacts
-*.out
-*.log
-
-# Misc
-*.swp
-
-# expf - Expense Files
-*.expf
+# Generated output
+Slide_*.html

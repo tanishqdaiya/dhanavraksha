@@ -16,32 +16,48 @@
   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#ifndef _TRANSACTION_H
-#define _TRANSACTION_H
+#include <stdlib.h>
 
-#include <stddef.h>
+#include "tdlib.h"
+#include "transaction.h"
 
-struct transaction
+char **
+tokenize_transaction (char line[])
 {
-  char id[7]; /* hex id of six characters */
-  char date[11]; /* YYYY-MM-DD format */
-  char category[64];
-  double amount;
-  char description[256];
-};
+  size_t i = 0;
+  size_t start = 0, end = 0;
+  char *buf;
 
-struct v_transaction
-{
-  struct transaction **transactions;
-  size_t length;
-  size_t capacity;
-};
+  size_t size;
+  char **tokens;
 
-void append_transaction (struct v_transaction *vec_txn,
-			 struct transaction *txn);
+  size = 5 * sizeof (char *);
+  tokens = (char **) malloc (size);
+  if (tokens == NULL)
+    PANIC ("tokenize_transaction: memory allocation failed (size: %zu)\n", size);
 
-void load_transactions (struct v_transaction *to, const char *filename);
+  buf = line;
+  while (*buf != '\0')
+    {
+      if (*buf == '\t')
+	{
+	  char *slice;
 
-void print_transaction (const struct transaction t);
+	  slice = strslice (line, start, end);
+	  tokens[i++] = slice;
+	  start = end + 1;
+	}
 
-#endif /* _TRANSACTION_H */
+      end++;
+      buf++;
+    }
+
+  if (start < end)
+    {
+      char *slice;
+      slice = strslice (line, start, end);
+      tokens[i++] = slice;
+    }
+
+  return tokens;
+}

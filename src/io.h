@@ -16,8 +16,19 @@
   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#ifndef IO_H
-#define IO_H
+#ifndef _IO_H
+#define _IO_H
+
+#include <stdint.h>
+
+#define MAX_LINE_SIZE 4096
+
+/* General definition of a buffer */
+struct buffer
+{
+  char *data;
+  size_t length, capacity;
+};
 
 /* User-defined prompt-style. Use-carefully */
 #ifndef PROMPT_STYLE
@@ -29,7 +40,17 @@
   while (0)
 #endif /* PROMPT_STYLE */
 
-/* Custom prompt function to take input by line into a buffer */
-char *prompt (const char *label);
+/* Creates a file with given filename, generally used with file_exists fn */
+void ensure_file_exists (const char *filename);
 
-#endif /* IO_H */
+/* Checks if a given file with filename exists */
+bool file_exists (const char *filename);
+
+/* Custom prompt function to take input by line into a buffer */
+struct buffer *prompt (const char *label);
+
+/* Yes and No prompt, based on the prompt function */
+uint8_t
+confirm_yn (const char *label, char def);
+
+#endif /* _IO_H */

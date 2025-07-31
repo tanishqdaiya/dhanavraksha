@@ -16,32 +16,11 @@
   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#ifndef _TRANSACTION_H
-#define _TRANSACTION_H
+#ifndef _PARSER_H
+#define _PARSER_H
 
-#include <stddef.h>
+/* Convert a line containing transcation data (of the style as documented in
+   README.txt) into an array of tokens */
+char **tokenize_transaction (char line[]);
 
-struct transaction
-{
-  char id[7]; /* hex id of six characters */
-  char date[11]; /* YYYY-MM-DD format */
-  char category[64];
-  double amount;
-  char description[256];
-};
-
-struct v_transaction
-{
-  struct transaction **transactions;
-  size_t length;
-  size_t capacity;
-};
-
-void append_transaction (struct v_transaction *vec_txn,
-			 struct transaction *txn);
-
-void load_transactions (struct v_transaction *to, const char *filename);
-
-void print_transaction (const struct transaction t);
-
-#endif /* _TRANSACTION_H */
+#endif /* _PARSER_H */

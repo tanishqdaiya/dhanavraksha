@@ -16,32 +16,12 @@
   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#ifndef _TRANSACTION_H
-#define _TRANSACTION_H
+#ifndef _TUI_H
+#define _TUI_H
 
-#include <stddef.h>
+#include "transaction.h"
 
-struct transaction
-{
-  char id[7]; /* hex id of six characters */
-  char date[11]; /* YYYY-MM-DD format */
-  char category[64];
-  double amount;
-  char description[256];
-};
+void
+print_transactions (const struct v_transaction vt);
 
-struct v_transaction
-{
-  struct transaction **transactions;
-  size_t length;
-  size_t capacity;
-};
-
-void append_transaction (struct v_transaction *vec_txn,
-			 struct transaction *txn);
-
-void load_transactions (struct v_transaction *to, const char *filename);
-
-void print_transaction (const struct transaction t);
-
-#endif /* _TRANSACTION_H */
+#endif /* _TUI_H */
