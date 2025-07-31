@@ -62,7 +62,7 @@ str_to_low (char *str)
   while (*p != '\0')
     {
       if (*p >= 65 && *p <= 90)
-	  *p += 32;
+        *p += 32;
       p++;
     }
 
@@ -76,10 +76,10 @@ idgen (char *buf, size_t len)
 {
   size_t i;
   const char *allowed;
-  
+
   allowed = "0123456789abcdef";
   for (i = 0; i < len; ++i)
     buf[i] = allowed[rand () % 16];
-  
+
   buf[len - 1] = '\0';
 }

@@ -25,30 +25,31 @@
 #include "tdlib.h"
 
 void
-ensure_file_exists (const char *filename) {
-    FILE *f = fopen (filename, "a");
+ensure_file_exists (const char *filename)
+{
+  FILE *f = fopen (filename, "a");
 
-    if (!f)
-      {
-	fprintf (stderr, "fopen(%s): %s\n", filename, strerror (errno));
-	exit (EXIT_FAILURE);
-      }
+  if (!f)
+    {
+      fprintf (stderr, "fopen(%s): %s\n", filename, strerror (errno));
+      exit (EXIT_FAILURE);
+    }
 
-    fclose (f);
+  fclose (f);
 }
 
 bool
 file_exists (const char *filename)
 {
-    FILE *file = fopen (filename, "r");
+  FILE *file = fopen (filename, "r");
 
-    if (file)
-      {
-	fclose(file);
-	return true;
-      }
+  if (file)
+    {
+      fclose (file);
+      return true;
+    }
 
-    return false;
+  return false;
 }
 
 struct buffer *
@@ -60,14 +61,14 @@ prompt (const char *label)
   PROMPT_STYLE (label);
   fflush (stdout);
 
-  buf = (struct buffer *)malloc (sizeof (struct buffer));
+  buf = (struct buffer *) malloc (sizeof (struct buffer));
   if (buf == NULL)
     PANIC ("prompt: memory allocation failed (size: %zu)\n",
-	   sizeof (struct buffer));
+           sizeof (struct buffer));
 
   buf->length = 0;
   buf->capacity = 16;
-  buf->data = (char *)malloc (sizeof (char) * buf->capacity);
+  buf->data = (char *) malloc (sizeof (char) * buf->capacity);
   if (buf->data == NULL)
     PANIC ("prompt: memory allocation failed (size: %zu)\n", buf->capacity);
 
@@ -82,14 +83,14 @@ prompt (const char *label)
   while ((c = getchar ()) != '\n' && c != EOF)
     {
       if (buf->length >= buf->capacity)
-	{
-	  buf->capacity *= 2;
-	  buf->data = (char *)realloc (buf->data,
-				       sizeof (char) * buf->capacity);
-	  if (buf->data == NULL)
-	    PANIC ("prompt: memory reallocation failed (size: %zu)\n",
-		   buf->capacity);
-	}
+        {
+          buf->capacity *= 2;
+          buf->data = (char *) realloc (buf->data,
+                                        sizeof (char) * buf->capacity);
+          if (buf->data == NULL)
+            PANIC ("prompt: memory reallocation failed (size: %zu)\n",
+                   buf->capacity);
+        }
 
       buf->data[buf->length++] = c;
     }
@@ -120,27 +121,29 @@ confirm_yn (const char *label, char def)
     {
       buf = prompt (label);
       if (buf->length > 1)
-	{
-	  printf ("Sorry, please try again!\n");
-	  tries--;
-	  continue;
-	}
+        {
+          printf ("Sorry, please try again!\n");
+          tries--;
+          continue;
+        }
 
       if (buf->length == 0)
-	{
-	  str_to_low (&def);
-	  if (def == 'y') confirm = 0;
-	  if (def == 'n') confirm = 1;
-	  break;
-	}
+        {
+          str_to_low (&def);
+          if (def == 'y')
+            confirm = 0;
+          if (def == 'n')
+            confirm = 1;
+          break;
+        }
 
       str_to_low (buf->data);
 
       if (strncmp (buf->data, "y", 1) == 0)
-	confirm = 0;
+        confirm = 0;
 
       if (strncmp (buf->data, "n", 1) == 0)
-	confirm = 1;
+        confirm = 1;
 
       tries--;
     }
@@ -154,24 +157,26 @@ confirm_yn (const char *label, const char *default_response)
 {
   struct buffer *buf;
 
-  TRAP (strlen (default_response) > 1, "confirm_yn: default response should be"
-	"a single character\n");
+  TRAP (strlen (default_response) > 1,
+        "confirm_yn: default response should be" "a single character\n");
 
-  do {
-    buf = prompt (label);
-    str_to_low (buf->data);
+  do
+    {
+      buf = prompt (label);
+      str_to_low (buf->data);
 
-    if (buf->length == 0)
-      strncpy (buf->data, default_response, 2);
+      if (buf->length == 0)
+        strncpy (buf->data, default_response, 2);
 
-    printf ("data: %s\n", buf->data);
+      printf ("data: %s\n", buf->data);
 
-    if (buf->data[0] == 'y')
-      printf ("%s yes received\n", buf->data);
-    else if (buf->data[0] == 'n')
-      printf ("%s no received\n", buf->data);
-    else
-      continue;
-  } while (true);
+      if (buf->data[0] == 'y')
+        printf ("%s yes received\n", buf->data);
+      else if (buf->data[0] == 'n')
+        printf ("%s no received\n", buf->data);
+      else
+        continue;
+    }
+  while (true);
 }
 #endif

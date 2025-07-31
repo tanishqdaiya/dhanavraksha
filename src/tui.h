@@ -21,7 +21,6 @@
 
 #include "transaction.h"
 
-void
-print_transactions (const struct v_transaction vt);
+void print_transactions (const struct v_transaction vt);
 
 #endif /* _TUI_H */

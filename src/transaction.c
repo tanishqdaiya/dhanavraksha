@@ -55,7 +55,7 @@ load_transactions (struct v_transaction *to, const char *from_file)
       sz = sizeof (struct transaction);
       t = (struct transaction *) malloc (sz);
       if (t == NULL)
-	PANIC ("main: memory allocation failed (size: %zu)\n", sz);
+        PANIC ("main: memory allocation failed (size: %zu)\n", sz);
 
       strcpy (t->id, tokens[0]);
       strcpy (t->date, tokens[1]);
@@ -82,8 +82,8 @@ append_transaction (struct v_transaction *vec_txn, struct transaction *txn)
       vec_txn->capacity = DA_INITIALIZER_VALUE;
       vec_txn->transactions = (struct transaction **) malloc (size);
       if (vec_txn->transactions == NULL)
-	PANIC ("append_transaction: memory allocation failed (size: %zu)\n",
-	       size);
+        PANIC ("append_transaction: memory allocation failed (size: %zu)\n",
+               size);
 
       vec_txn->transactions[vec_txn->length++] = txn;
       return;
@@ -91,22 +91,23 @@ append_transaction (struct v_transaction *vec_txn, struct transaction *txn)
   else
     {
       if (vec_txn->length >= vec_txn->capacity)
-	{
-	  /* Reallocate; append and return. */
-	  size_t size;
+        {
+          /* Reallocate; append and return. */
+          size_t size;
 
-	  vec_txn->capacity *= 2;
-	  size = sizeof (struct transaction *) * vec_txn->capacity;
+          vec_txn->capacity *= 2;
+          size = sizeof (struct transaction *) * vec_txn->capacity;
 
-	  struct transaction **new_array = realloc (vec_txn->transactions, size);
-	  if (new_array == NULL)
-	    PANIC ("append_transaction: memory reallocation failed"
-		   "(size: %zu)\n", size);
+          struct transaction **new_array =
+            realloc (vec_txn->transactions, size);
+          if (new_array == NULL)
+            PANIC ("append_transaction: memory reallocation failed"
+                   "(size: %zu)\n", size);
 
-	  vec_txn->transactions = new_array;
-	  vec_txn->transactions[vec_txn->length++] = txn;
-	  return;
-	}
+          vec_txn->transactions = new_array;
+          vec_txn->transactions[vec_txn->length++] = txn;
+          return;
+        }
 
       /* Append and return. */
       vec_txn->transactions[vec_txn->length++] = txn;

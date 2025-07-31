@@ -23,8 +23,8 @@
 
 struct transaction
 {
-  char id[7]; /* hex id of six characters */
-  char date[11]; /* YYYY-MM-DD format */
+  char id[7];                   /* hex id of six characters */
+  char date[11];                /* YYYY-MM-DD format */
   char category[64];
   double amount;
   char description[256];
@@ -38,7 +38,7 @@ struct v_transaction
 };
 
 void append_transaction (struct v_transaction *vec_txn,
-			 struct transaction *txn);
+                         struct transaction *txn);
 
 void load_transactions (struct v_transaction *to, const char *filename);
 

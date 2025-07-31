@@ -50,7 +50,6 @@ bool file_exists (const char *filename);
 struct buffer *prompt (const char *label);
 
 /* Yes and No prompt, based on the prompt function */
-uint8_t
-confirm_yn (const char *label, char def);
+uint8_t confirm_yn (const char *label, char def);
 
 #endif /* _IO_H */

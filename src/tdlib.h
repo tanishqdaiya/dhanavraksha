@@ -56,8 +56,7 @@
 char *strslice (const char *str, int start, int end);
 
 /* Modifies the string provided string buffer into lowercase. */
-void
-str_to_low (char *str);
+void str_to_low (char *str);
 
 /* Writes a pseudo-randomly generated id into buffer buf of appropriate
    length. The len parameter defines the required length of the generated id. It

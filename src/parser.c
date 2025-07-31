@@ -34,19 +34,20 @@ tokenize_transaction (char line[])
   size = 5 * sizeof (char *);
   tokens = (char **) malloc (size);
   if (tokens == NULL)
-    PANIC ("tokenize_transaction: memory allocation failed (size: %zu)\n", size);
+    PANIC ("tokenize_transaction: memory allocation failed (size: %zu)\n",
+           size);
 
   buf = line;
   while (*buf != '\0')
     {
       if (*buf == '\t')
-	{
-	  char *slice;
+        {
+          char *slice;
 
-	  slice = strslice (line, start, end);
-	  tokens[i++] = slice;
-	  start = end + 1;
-	}
+          slice = strslice (line, start, end);
+          tokens[i++] = slice;
+          start = end + 1;
+        }
 
       end++;
       buf++;

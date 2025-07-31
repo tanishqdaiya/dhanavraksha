@@ -44,20 +44,20 @@ static void
 usage (const char *progname, FILE *stream, int code)
 {
   fprintf (stream,
-	   "Usage: %s [OPTION] COMMAND\n"
-	   "\n"
-	   "Personal finance logger.\n"
-	   "\n"
-	   "Options:\n"
-	   "  -h, --help        Show this help message and exit\n"
-	   "  -v, --version     Show version information and exit\n"
-	   "\n"
-	   "Commands:\n"
-	   "  view              View transaction records\n"
-	   "  entry             Enter a new transaction record\n"
-	   "\n"
-	   "Example:\n"
-	   "  %s entry\n" "  %s view\n", progname, progname, progname);
+           "Usage: %s [OPTION] COMMAND\n"
+           "\n"
+           "Personal finance logger.\n"
+           "\n"
+           "Options:\n"
+           "  -h, --help        Show this help message and exit\n"
+           "  -v, --version     Show version information and exit\n"
+           "\n"
+           "Commands:\n"
+           "  view              View transaction records\n"
+           "  entry             Enter a new transaction record\n"
+           "\n"
+           "Example:\n"
+           "  %s entry\n" "  %s view\n", progname, progname, progname);
   exit (code);
 }
 
@@ -82,7 +82,7 @@ int
 main (int argc, char **argv)
 {
   srand (time (NULL));
-  
+
   if (argc < 2)
     usage (argv[0], stderr, EXIT_FAILURE);
 
@@ -92,20 +92,20 @@ main (int argc, char **argv)
 
     for (i = 1; i < argc; ++i)
       {
-	arg = argv[i];
+        arg = argv[i];
 
-	if (STRCMP_LIT (arg, "-h") == 0 || STRCMP_LIT (arg, "--help") == 0)
-	  args.help = 1;
-	else if (STRCMP_LIT (arg, "-v") == 0
-		 || STRCMP_LIT (arg, "--version") == 0)
-	  args.version = 1;
-	else if (arg[0] != '-' && args.command == NULL)
-	  args.command = arg;
-	else
-	  {
-	    fprintf (stderr, "Unknown argument: %s\n", arg);
-	    usage (argv[0], stderr, EXIT_FAILURE);
-	  }
+        if (STRCMP_LIT (arg, "-h") == 0 || STRCMP_LIT (arg, "--help") == 0)
+          args.help = 1;
+        else if (STRCMP_LIT (arg, "-v") == 0
+                 || STRCMP_LIT (arg, "--version") == 0)
+          args.version = 1;
+        else if (arg[0] != '-' && args.command == NULL)
+          args.command = arg;
+        else
+          {
+            fprintf (stderr, "Unknown argument: %s\n", arg);
+            usage (argv[0], stderr, EXIT_FAILURE);
+          }
       }
   }
 
@@ -126,10 +126,10 @@ main (int argc, char **argv)
       begin = clock ();
       load_transactions (&vector_transaction, WFILE);
       print_transactions (vector_transaction);
-      time_spent = (double)(clock() - begin) / CLOCKS_PER_SEC;
-      
+      time_spent = (double) (clock () - begin) / CLOCKS_PER_SEC;
+
       printf ("Indexed %zu Transaction(s) in %fs!\n",
-	      vector_transaction.length, time_spent);
+              vector_transaction.length, time_spent);
     }
   else if (STRCMP_LIT (args.command, "entry") == 0)
     {
@@ -149,24 +149,24 @@ main (int argc, char **argv)
       print_transaction (t);
 
       if (confirm_yn ("Save record (Y/n)?", 'y') == 0)
-	{
-	  FILE *fp;
-	  const char *filename;
+        {
+          FILE *fp;
+          const char *filename;
 
-	  filename = WFILE;
-	  fp = fopen (WFILE, "a");
-	  if (fp == NULL)
-	    {
-	      fprintf (stderr, "fopen(%s): %s\n", filename, strerror (errno));
-	      exit (EXIT_FAILURE);
-	    }
+          filename = WFILE;
+          fp = fopen (WFILE, "a");
+          if (fp == NULL)
+            {
+              fprintf (stderr, "fopen(%s): %s\n", filename, strerror (errno));
+              exit (EXIT_FAILURE);
+            }
 
-	  fprintf (fp, "%s\t%s\t%s\t%lf\t%s\n",
-		   t.id, t.date, t.category, t.amount, t.description);
-	  fclose (fp);
-	  
-	  printf ("Record saved successfully!\n");
-	}
+          fprintf (fp, "%s\t%s\t%s\t%lf\t%s\n",
+                   t.id, t.date, t.category, t.amount, t.description);
+          fclose (fp);
+
+          printf ("Record saved successfully!\n");
+        }
     }
   else
     {
