@@ -1,3 +1,6 @@
+> [!CAUTION]
+> The project is still in development. Check [Issue 2](https://github.com/tanishqdaiya/dhanavraksha/issues/2) before proceeding.
+
 dhanavraksha
 ============
 
